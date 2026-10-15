@@ -131,3 +131,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   .layout { grid-template-columns: 1fr; grid-template-rows: 60vh auto; }
   .controls { order: 2; border-right: 0; } .map-wrap { order: 1; }
 }
+
+.site-select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); font: 13.5px var(--font); }

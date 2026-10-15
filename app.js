@@ -56,10 +56,14 @@
 
   // ---------- data ----------
   const get = u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.json(); });
-  Promise.all(['cadasters.geojson', 'districts.geojson', 'governorates.geojson', 'damaged_sites.geojson', 'geoai_buildings_khiam.geojson'].map(get))
+  const opt = u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null);
+  Promise.all(['cadasters.geojson', 'districts.geojson', 'governorates.geojson', 'damaged_sites.geojson', 'geoai_buildings_khiam.geojson'].map(get)
+    .concat([opt('geoai_buildings_sites.geojson'), opt('geoai_sites_summary.json')]))
     .then(init).catch(e => { $('#legend').innerHTML = '<h3>Data could not load</h3><p class="sub">Open the site through a web server (e.g. GitHub Pages), not as a local file.</p>'; console.error(e); });
 
-  let CAD, DIST, GOV, SITES, GEOAI, layers = {};
+  let CAD, DIST, GOV, SITES, GEOAI, GSITES, GSUM, layers = {};
+  const sumKey = (lat, lon) => lat.toFixed(4) + ',' + lon.toFixed(4);
+  const GLOOK = {};
 
   function aggregate(key) {
     const agg = {};
@@ -81,7 +85,8 @@
   }
 
   function init(d) {
-    [CAD, DIST, GOV, SITES, GEOAI] = d;
+    [CAD, DIST, GOV, SITES, GEOAI, GSITES, GSUM] = d;
+    (GSUM || []).forEach(r => GLOOK[sumKey(r.lat, r.lon)] = r);
     const aD = aggregate('DISTRICT'), aG = aggregate('GOV');
     DIST.features.forEach(f => Object.assign(f.properties, aD[f.properties.DISTRICT] || {}, { NAME: f.properties.DISTRICT }));
     GOV.features.forEach(f => Object.assign(f.properties, aG[f.properties.GOV] || {}, { NAME: f.properties.GOV }));
@@ -101,7 +106,8 @@
       m.bindPopup(`<b>${p.facility_name_ar || p.facility_type}</b><br>${p.facility_type}<br>${p.municipality}, ${p.district}<br>` +
         `<span class="pill" style="background:${dmgColor[p.damage]};color:${p.dmg_rank <= 2 ? '#fff' : '#111'}">${p.damage}</span><br>` +
         `Services operating: <b>${p.service_continuity}</b>${p.damage_types ? '<br><small>Damage: ' + p.damage_types + '</small>' : ''}` +
-        (p.shared_coord ? '<br><small>Location shared with another site (municipality-level).</small>' : ''));
+        (p.shared_coord ? '<br><small>Location shared with another site (municipality-level).</small>' : '') +
+        (GLOOK[sumKey(lat, lon)] ? `<br><span style="color:#007c8c">GeoAI: <b>${GLOOK[sumKey(lat, lon)].buildings_100m}</b> standing buildings detected within 100 m (${GLOOK[sumKey(lat, lon)].buildings_chip} in the scanned area)</span>` : ''));
       layers.sites.addLayer(m);
     });
 
@@ -110,6 +116,17 @@
     layers.khiam = L.circleMarker([33.3281, 35.61284], { pane: 'sites', radius: 10, fillColor: '#67000d', fillOpacity: 1, color: '#fff', weight: 2 })
       .bindTooltip('Khiam municipality – reported destroyed (LRC)', { permanent: true, direction: 'top', offset: [0, -10] });
 
+    if (GSITES) {
+      layers.gsites = L.geoJSON(GSITES, { pane: 'geoai',
+        style: f => ({ color: dmgColor[f.properties.damage] || '#00e5ff', weight: 1.4, fillColor: dmgColor[f.properties.damage] || '#00e5ff', fillOpacity: 0.3 }),
+        onEachFeature: (f, l) => l.bindPopup(`<b>GeoAI-detected building</b><br>Near: ${f.properties.facility}, ${f.properties.municipality}<br>Site damage (LRC): <b>${f.properties.damage}</b><br>Distance to site: ${f.properties.dist_m} m · confidence ${Math.round((f.properties.confidence || 0) * 100)}%`) });
+      const sel = $('#siteJump');
+      (GSUM || []).slice().sort((a, b) => a.dmg_rank - b.dmg_rank || a.municipality.localeCompare(b.municipality)).forEach((r, i) => {
+        const o = document.createElement('option'); o.value = r.lat + ',' + r.lon;
+        o.textContent = `${r.municipality} – ${r.damage} (${r.buildings_100m} within 100 m)`; sel.appendChild(o);
+      });
+      $('#geoaiSitesNote').textContent = `${GSITES.features.length.toLocaleString('en-US')} buildings outlined by GeoAI on Esri imagery around ${(GSUM || []).length} locations where LRC teams reported damage (destroyed to mild), coloured by the reported damage level.`;
+    } else { $('#geoaiSitesChk').disabled = true; $('#siteJump').disabled = true; }
     buildChips(); bindUI(); drawChoropleth(); renderLegend(); renderLayersTab(); renderOverview();
     setTimeout(fitSouth, 50);
   }
@@ -241,6 +258,7 @@
     let h = '<h3>Map Legend</h3>' + legendIndicator();
     if (map.hasLayer(layers.zones)) h += '<h4>Conflict zone</h4>' + ZONES.map(z => `<div class="row"><span class="sw" style="background:${z[2]}"></span>${z[1]}</div>`).join('');
     if (map.hasLayer(layers.sites)) h += '<h4>Public institutions – damage</h4>' + DMG.filter(d => state.dmgOn.has(d[0])).map(d => `<div class="row"><span class="dot" style="background:${d[1]}"></span>${d[0]}</div>`).join('');
+    if (layers.gsites && map.hasLayer(layers.gsites)) h += '<h4>GeoAI buildings around damaged sites</h4><p class="sub">Outline colour = damage reported at the nearby site</p>';
     if (map.hasLayer(layers.geoai)) h += '<h4>GeoAI</h4><div class="row"><span class="sw" style="background:rgba(0,229,255,.35);border-color:#00e5ff"></span>Detected standing building</div>';
     $('#legend').innerHTML = h;
   }
@@ -249,6 +267,7 @@
     if (state.ind) items.push(`<div class="layer-item"><b>${IND[state.ind].label}</b><span class="sub">${{ cad: 'Cadastre', dist: 'District', gov: 'Governorate' }[state.res]} level · ramp ${IND[state.ind].ramps[(state.rampIdx[state.ind] || 0) % IND[state.ind].ramps.length]}</span></div>`);
     if (map.hasLayer(layers.zones)) items.push(`<div class="layer-item"><b>Conflict zones</b><span class="sub">Opacity ${Math.round(state.zoneOp * 100)}% · source: governorate sheets, 21 Sep 2026</span></div>`);
     if (map.hasLayer(layers.sites)) items.push(`<div class="layer-item"><b>Damaged public institutions</b><span class="sub">${state.dmgOn.size} of 7 damage levels shown · LRC, Jun–Jul 2026</span></div>`);
+    if (layers.gsites && map.hasLayer(layers.gsites)) items.push(`<div class="layer-item"><b>GeoAI buildings around damaged sites</b><span class="sub">${GSITES.features.length} polygons · ${(GSUM || []).length} site locations · Esri imagery</span></div>`);
     if (map.hasLayer(layers.geoai)) items.push(`<div class="layer-item"><b>GeoAI detected buildings – Khiam</b><span class="sub">379 polygons · Mask R-CNN on Esri imagery</span></div>`);
     items.push(`<div class="layer-item"><b>Basemap</b><span class="sub">${{ light: 'Esri Light Gray Canvas', dark: 'Esri Dark Gray Canvas', sat: 'Esri World Imagery' }[state.bm]}</span></div>`);
     $('#tab-layers').innerHTML = '<h4>Layers on the map</h4>' + items.join('');
@@ -289,6 +308,7 @@
     $('#siteChk').checked = true; layers.sites.addTo(map);
     // GeoAI off
     $('#geoaiChk').checked = false; map.removeLayer(layers.geoai); map.removeLayer(layers.khiam);
+    $('#geoaiSitesChk').checked = false; if (layers.gsites) map.removeLayer(layers.gsites); $('#siteJump').value = '';
     // basemap matches theme, view back to South Lebanon
     setBasemap(state.theme === 'dark' ? 'dark' : 'light');
     drawChoropleth(); renderOverview(); refreshPanels(); showTab('welcome'); fitSouth();
@@ -312,7 +332,17 @@
     $('#siteChk').onchange = e => { e.target.checked ? layers.sites.addTo(map) : map.removeLayer(layers.sites); refreshPanels(); };
     $('#dmgChips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; const k = c.dataset.dmg; state.dmgOn.has(k) ? state.dmgOn.delete(k) : state.dmgOn.add(k); c.classList.toggle('off', !state.dmgOn.has(k)); applySiteFilter(); refreshPanels(); };
     $('#geoaiChk').onchange = e => { if (e.target.checked) { layers.geoai.addTo(map); layers.khiam.addTo(map); } else { map.removeLayer(layers.geoai); map.removeLayer(layers.khiam); } refreshPanels(); };
-    $('#khiamBtn').onclick = () => { $('#geoaiChk').checked = true; layers.geoai.addTo(map); layers.khiam.addTo(map); setBasemap('sat'); map.flyTo([33.3281, 35.61284], 16, { duration: 1.6 }); refreshPanels(); };
+    $('#khiamBtn').onclick = () => { if (state.ind) { state.ind = null; $$('.ind').forEach(x => x.classList.remove('on')); drawChoropleth(); } $('#geoaiChk').checked = true; layers.geoai.addTo(map); layers.khiam.addTo(map); setBasemap('sat'); map.flyTo([33.3281, 35.61284], 16, { duration: 1.6 }); refreshPanels(); };
+    $('#geoaiSitesChk').onchange = e => { if (!layers.gsites) return; e.target.checked ? layers.gsites.addTo(map) : map.removeLayer(layers.gsites); refreshPanels(); };
+    $('#siteJump').onchange = e => {
+      if (!e.target.value || !layers.gsites) return;
+      const [la, lo] = e.target.value.split(',').map(Number);
+      $('#geoaiSitesChk').checked = true; layers.gsites.addTo(map); $('#siteChk').checked = true; layers.sites.addTo(map);
+      if (state.ind) { state.ind = null; $$('.ind').forEach(x => x.classList.remove('on')); drawChoropleth(); }
+      setBasemap('sat'); map.flyTo([la, lo], 17, { duration: 1.4 });
+      map.once('moveend', () => layers.sites.eachLayer(m => { const ll = m.getLatLng(); if (Math.abs(ll.lat - la) < 1e-4 && Math.abs(ll.lng - lo) < 1e-4) m.openPopup(); }));
+      refreshPanels();
+    };
     $$('[data-bm]').forEach(b => b.onclick = () => setBasemap(b.dataset.bm));
     $('#fitBtn').onclick = fitSouth;
     $('#selBtn').classList.add('on');

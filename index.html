@@ -6,7 +6,7 @@
 <title>Rapid impact assessment - UNDP + LRC</title>
 <meta name="description" content="Interactive map of population, displacement, conflict zones and damage to public institutions in South Lebanon and Nabatiyeh (LRC assessment + GeoAI).">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <header class="topbar">
@@ -73,6 +73,10 @@
         <label class="toggle"><input type="checkbox" id="geoaiChk"> <span>GeoAI detected buildings – Khiam</span></label>
         <button type="button" class="ghost-btn" id="khiamBtn">Fly to Khiam on satellite imagery</button>
         <p class="sub">379 standing buildings outlined by the GeoAI QGIS plugin (Mask R-CNN) on Esri imagery around the Khiam municipality building, which LRC teams reported as destroyed.</p>
+        <label class="toggle"><input type="checkbox" id="geoaiSitesChk"> <span>GeoAI buildings around every damaged site</span></label>
+        <label class="sub" for="siteJump">Fly to a damaged site on satellite imagery</label>
+        <select id="siteJump" class="site-select"><option value="">Choose a site…</option></select>
+        <p class="sub" id="geoaiSitesNote">Buildings outlined by GeoAI on Esri imagery around each location where LRC teams reported damage (destroyed to mild), coloured by the reported damage level.</p>
       </div>
     </details>
 
@@ -115,7 +119,7 @@
         <li><b>Turn on an indicator</b><span>Under Displacement &amp; Population, pick one indicator. “Color” changes the ramp.</span></li>
         <li><b>Read the damage</b><span>Dots are public institutions coloured by damage level. Filter levels with the chips.</span></li>
         <li><b>Click an area</b><span>The Analysis tab shows the figures for the clicked cadastre, district or governorate.</span></li>
-        <li><b>See the GeoAI check</b><span>Open GeoAI and fly to Khiam to compare AI-detected buildings with the field report.</span></li>
+        <li><b>See the GeoAI check</b><span>Open GeoAI, turn on the buildings around damaged sites, and fly to any site to compare the AI result with the field report.</span></li>
       </ol>
     </div>
     <div class="tab-body" id="tab-layers" hidden></div>
@@ -126,6 +130,8 @@
         <li><a href="cadasters.geojson" download>Cadastres with indicators (GeoJSON)</a></li>
         <li><a href="damaged_sites.geojson" download>Damaged public institutions (GeoJSON)</a></li>
         <li><a href="geoai_buildings_khiam.geojson" download>GeoAI buildings – Khiam (GeoJSON)</a></li>
+        <li><a href="geoai_buildings_sites.geojson" download>GeoAI buildings around damaged sites (GeoJSON)</a></li>
+        <li><a href="geoai_sites_summary.json" download>GeoAI building counts per damaged site (JSON)</a></li>
         <li><a href="districts.geojson" download>Districts (GeoJSON)</a></li>
         <li><a href="governorates.geojson" download>Governorates (GeoJSON)</a></li>
       </ul>
@@ -135,6 +141,6 @@
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
