@@ -47,8 +47,8 @@
   map.createPane('geoai').style.zIndex = 430;
   map.createPane('sites').style.zIndex = 620;
   const BASEMAPS = {
-    light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap contributors, © CARTO' }),
-    dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap contributors, © CARTO' }),
+    light: L.layerGroup([L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors' }), L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, pane: 'shadowPane' })]),
+    dark: L.layerGroup([L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors' }), L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, pane: 'shadowPane' })]),
     sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' })
   };
   BASEMAPS.light.addTo(map);
@@ -111,7 +111,7 @@
       .bindTooltip('Khiam municipality – reported destroyed (LRC)', { permanent: true, direction: 'top', offset: [0, -10] });
 
     buildChips(); bindUI(); drawChoropleth(); renderLegend(); renderLayersTab(); renderOverview();
-    fitSouth();
+    setTimeout(fitSouth, 50);
   }
 
   // ---------- choropleth ----------
@@ -250,7 +250,7 @@
     if (map.hasLayer(layers.zones)) items.push(`<div class="layer-item"><b>Conflict zones</b><span class="sub">Opacity ${Math.round(state.zoneOp * 100)}% · source: governorate sheets, 21 Sep 2026</span></div>`);
     if (map.hasLayer(layers.sites)) items.push(`<div class="layer-item"><b>Damaged public institutions</b><span class="sub">${state.dmgOn.size} of 7 damage levels shown · LRC, Jun–Jul 2026</span></div>`);
     if (map.hasLayer(layers.geoai)) items.push(`<div class="layer-item"><b>GeoAI detected buildings – Khiam</b><span class="sub">379 polygons · Mask R-CNN on Esri imagery</span></div>`);
-    items.push(`<div class="layer-item"><b>Basemap</b><span class="sub">${{ light: 'CARTO Light', dark: 'CARTO Dark', sat: 'Esri World Imagery' }[state.bm]}</span></div>`);
+    items.push(`<div class="layer-item"><b>Basemap</b><span class="sub">${{ light: 'Esri Light Gray Canvas', dark: 'Esri Dark Gray Canvas', sat: 'Esri World Imagery' }[state.bm]}</span></div>`);
     $('#tab-layers').innerHTML = '<h4>Layers on the map</h4>' + items.join('');
   }
   function refreshPanels() { renderLegend(); renderLayersTab(); }
@@ -270,7 +270,7 @@
     $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     $$('.tab-body').forEach(el => el.hidden = el.id !== 'tab-' + t);
   }
-  function fitSouth() { map.fitBounds([[33.04, 35.1], [33.62, 35.85]]); }
+  function fitSouth() { map.invalidateSize(); map.fitBounds([[33.05, 35.15], [33.62, 35.82]], { padding: [10, 10] }); }
 
   function bindUI() {
     $$('[data-res]').forEach(b => b.onclick = () => { state.res = b.dataset.res; $$('[data-res]').forEach(x => x.classList.toggle('on', x === b)); if (selLayer) { map.removeLayer(selLayer); selLayer = null; renderOverview(); } drawChoropleth(); refreshPanels(); });
