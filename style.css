@@ -133,3 +133,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 }
 
 .site-select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); font: 13.5px var(--font); }
+
+.org-logo { height: 64px; width: auto; display: block; }
