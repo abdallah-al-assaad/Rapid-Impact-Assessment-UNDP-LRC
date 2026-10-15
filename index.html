@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>South Lebanon Displacement & Damage Map</title>
+<meta name="description" content="Interactive map of population, displacement, conflict zones and damage to public institutions in South Lebanon and Nabatiyeh (LRC assessment + GeoAI).">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="brand-text"><strong>DAMAGE &amp; DISPLACEMENT</strong><strong>MONITOR</strong><small>SOUTH LEBANON</small></div>
+  </div>
+  <div class="title-block">
+    <h1>Population, Displacement &amp; Damage Map</h1>
+    <nav class="nav"><a href="index.html" class="active">Map</a><a href="about.html">About</a><a href="about.html#data">Data &amp; Methods</a></nav>
+  </div>
+  <div class="top-right">
+    <button id="themeBtn" class="pill-btn" type="button">Dark</button>
+    <div class="org">UNDP<br><span>Lebanon</span></div>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- LEFT: layer controls -->
+  <aside class="controls" id="controls">
+    <section class="card">
+      <h2 class="card-title">Administrative resolution</h2>
+      <div class="seg" role="group" aria-label="Administrative resolution">
+        <button type="button" data-res="cad" class="on">Cadastre</button>
+        <button type="button" data-res="dist">District</button>
+        <button type="button" data-res="gov">Governorate</button>
+      </div>
+      <button type="button" id="labelsBtn" class="ghost-btn">Show labels</button>
+    </section>
+
+    <details class="group" open>
+      <summary class="group-head green">Displacement &amp; Population</summary>
+      <div class="group-body">
+        <p class="sub">Choose one indicator, or none to show only boundaries.</p>
+        <div class="ind-row"><button class="ind" data-ind="idps_total" type="button">IDPs hosted</button><button class="col-btn" data-ind="idps_total" type="button">Color</button></div>
+        <div class="ind-row"><button class="ind" data-ind="idps_shelter" type="button">IDPs in collective shelters</button><button class="col-btn" data-ind="idps_shelter" type="button">Color</button></div>
+        <div class="ind-row"><button class="ind" data-ind="pct_remaining" type="button">Population remaining (%)</button><button class="col-btn" data-ind="pct_remaining" type="button">Color</button></div>
+        <div class="ind-row"><button class="ind" data-ind="pop_now" type="button">Current population</button><button class="col-btn" data-ind="pop_now" type="button">Color</button></div>
+        <div class="ind-row"><button class="ind" data-ind="pop_before" type="button">Population before escalation</button><button class="col-btn" data-ind="pop_before" type="button">Color</button></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary class="group-head">Conflict &amp; Access</summary>
+      <div class="group-body">
+        <label class="toggle"><input type="checkbox" id="zoneChk"> <span>Conflict zones (21 Sep 2026)</span></label>
+        <label class="slider">Opacity <input type="range" id="zoneOp" min="0" max="100" value="45"><output id="zoneOpOut">45%</output></label>
+        <p class="sub">Cadastres within the yellow line, on the front line (0–5 km), 5–7 km away, or outside the conflict line, as coded in the governorate sheets.</p>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary class="group-head">LRC Preliminary Assessment</summary>
+      <div class="group-body">
+        <div class="ind-row"><button class="ind" data-ind="lrc_score" type="button">Priority score (0–100)</button><button class="col-btn" data-ind="lrc_score" type="button">Color</button></div>
+        <label class="toggle"><input type="checkbox" id="siteChk" checked> <span>Damaged public institutions (268)</span></label>
+        <div class="chips" id="dmgChips"></div>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary class="group-head">GeoAI – Satellite Analysis</summary>
+      <div class="group-body">
+        <label class="toggle"><input type="checkbox" id="geoaiChk"> <span>GeoAI detected buildings – Khiam</span></label>
+        <button type="button" class="ghost-btn" id="khiamBtn">Fly to Khiam on satellite imagery</button>
+        <p class="sub">379 standing buildings outlined by the GeoAI QGIS plugin (Mask R-CNN) on Esri imagery around the Khiam municipality building, which LRC teams reported as destroyed.</p>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary class="group-head">Basemap</summary>
+      <div class="group-body seg seg3" role="group" aria-label="Basemap">
+        <button type="button" data-bm="light" class="on">Light</button>
+        <button type="button" data-bm="dark">Dark</button>
+        <button type="button" data-bm="sat">Satellite</button>
+      </div>
+    </details>
+  </aside>
+
+  <!-- CENTER: map -->
+  <section class="map-wrap">
+    <div id="map" aria-label="Map"></div>
+    <div class="map-tools">
+      <button type="button" id="fitBtn">Zoom to South Lebanon</button>
+      <button type="button" id="selBtn">Select Area of Interest</button>
+      <button type="button" id="clearBtn">Clear selection</button>
+    </div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <!-- RIGHT: info panel -->
+  <aside class="info">
+    <div class="tabs" role="tablist">
+      <button role="tab" type="button" data-tab="welcome" class="on">Welcome</button>
+      <button role="tab" type="button" data-tab="layers">Active Layers</button>
+      <button role="tab" type="button" data-tab="analysis">Analysis</button>
+      <button role="tab" type="button" data-tab="data">Data</button>
+    </div>
+    <div class="tab-body" id="tab-welcome">
+      <div class="guide-card"><h3>Displacement &amp; Damage Map Quick Guide</h3></div>
+      <h4>What the tool shows</h4>
+      <p>This tool maps <b>population</b>, <b>displacement</b>, <b>conflict proximity</b> and <b>damage to public institutions</b> across South Lebanon and Nabatiyeh at <b>cadastre</b>, <b>district</b> or <b>governorate</b> level. Data come from the governorate population &amp; IDP sheets (21 Sep 2026), the LRC Preliminary Assessment (Jun–Jul 2026) and a GeoAI satellite check.</p>
+      <h4>Quick start</h4>
+      <ol class="steps">
+        <li><b>Pick a resolution</b><span>Use the Administrative resolution buttons to set the map unit.</span></li>
+        <li><b>Turn on an indicator</b><span>Under Displacement &amp; Population, pick one indicator. “Color” changes the ramp.</span></li>
+        <li><b>Read the damage</b><span>Dots are public institutions coloured by damage level. Filter levels with the chips.</span></li>
+        <li><b>Click an area</b><span>The Analysis tab shows the figures for the clicked cadastre, district or governorate.</span></li>
+        <li><b>See the GeoAI check</b><span>Open GeoAI and fly to Khiam to compare AI-detected buildings with the field report.</span></li>
+      </ol>
+    </div>
+    <div class="tab-body" id="tab-layers" hidden></div>
+    <div class="tab-body" id="tab-analysis" hidden></div>
+    <div class="tab-body" id="tab-data" hidden>
+      <h4>Download the layers</h4>
+      <ul class="dl">
+        <li><a href="cadasters.geojson" download>Cadastres with indicators (GeoJSON)</a></li>
+        <li><a href="damaged_sites.geojson" download>Damaged public institutions (GeoJSON)</a></li>
+        <li><a href="geoai_buildings_khiam.geojson" download>GeoAI buildings – Khiam (GeoJSON)</a></li>
+        <li><a href="districts.geojson" download>Districts (GeoJSON)</a></li>
+        <li><a href="governorates.geojson" download>Governorates (GeoJSON)</a></li>
+      </ul>
+      <p class="sub">Preliminary data for coordination only. 83 institution points share a coordinate with another site, so they likely mark the municipality rather than the exact building.</p>
+    </div>
+  </aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

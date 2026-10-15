@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About – South Lebanon Displacement & Damage Map</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { display: block; }
+  .page { max-width: 820px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); line-height: 1.6; }
+  .page h2 { font-size: 22px; margin: 28px 0 8px; }
+  .page table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .page td, .page th { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; }
+  .page .note { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="brand-text"><strong>DAMAGE &amp; DISPLACEMENT</strong><strong>MONITOR</strong><small>SOUTH LEBANON</small></div></div>
+  <div class="title-block"><h1>Population, Displacement &amp; Damage Map</h1>
+    <nav class="nav"><a href="index.html">Map</a><a href="about.html" class="active">About</a><a href="#data">Data &amp; Methods</a></nav></div>
+  <div class="top-right"><div class="org">UNDP<br><span>Lebanon</span></div></div>
+</header>
+<main class="page">
+  <h2>About this map</h2>
+  <p>The map brings together three information sources on the 2026 escalation in South Lebanon and Nabatiyeh: governorate population and displacement sheets, the LRC Preliminary Assessment of municipalities and public institutions, and a GeoAI analysis of satellite imagery. It is built for coordination and prioritisation by the UNDP Lebanon Information Management team.</p>
+
+  <h2 id="data">Data &amp; methods</h2>
+  <table>
+    <tr><th>Layer</th><th>Source</th><th>Notes</th></tr>
+    <tr><td>Population &amp; IDPs</td><td>South and Nabatiyeh Governorate sheets, 21 Sep 2026</td><td>288 of 303 municipalities matched to cadastres. Nabatiyeh pre-escalation population estimated as families × 4.</td></tr>
+    <tr><td>Conflict zones</td><td>Cell colour coding in the same sheets</td><td>Within the yellow line; front line 0–5 km; 5–7 km; outside the conflict line.</td></tr>
+    <tr><td>LRC priority score</td><td>LRC Preliminary Assessment, Jun–Jul 2026</td><td>Latest assessment round per municipality (244 cadastres).</td></tr>
+    <tr><td>Damaged public institutions</td><td>LRC sheet “Upd_Damage_to_Institutions_Infr”</td><td>268 geolocated institutions; 83 share a coordinate with another site (municipality-level location).</td></tr>
+    <tr><td>GeoAI buildings – Khiam</td><td>GeoAI plugin for QGIS (Mask R-CNN) on Esri World Imagery</td><td>379 standing buildings detected. Model trained on US imagery; counts are indicative. Imagery date not shown by the provider.</td></tr>
+    <tr><td>Boundaries</td><td>Lebanon cadastres, UNICEF Lebanon GIS</td><td>Simplified for the web.</td></tr>
+  </table>
+  <p class="note">Preliminary data for coordination only. The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the United Nations.</p>
+  <p><a href="index.html">← Back to the map</a></p>
+</main>
+</body>
+</html>
