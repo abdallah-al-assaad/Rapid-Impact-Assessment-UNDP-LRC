@@ -1,6 +1,6 @@
 # South Lebanon Displacement & Damage Map
 
-Interactive web map (Leaflet) of population, displacement, conflict zones and damage to public institutions in South Lebanon and Nabatiyeh.
+Interactive web map of population, displacement, conflict zones and damage to public institutions in South Lebanon and Nabatiyeh.
 
 **Live map:** https://abdallah-al-assaad.github.io/south-lebanon-displacement-map/
 
