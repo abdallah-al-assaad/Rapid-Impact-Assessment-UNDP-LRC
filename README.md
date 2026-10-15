@@ -1,4 +1,4 @@
-# South Lebanon Displacement & Damage Map
+# Rapid impact assessment - UNDP + LRC
 
 Interactive web map of population, displacement, conflict zones and damage to public institutions in South Lebanon and Nabatiyeh.
 
