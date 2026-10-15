@@ -272,6 +272,28 @@
   }
   function fitSouth() { map.invalidateSize(); map.fitBounds([[33.05, 35.15], [33.62, 35.82]], { padding: [10, 10] }); }
 
+  // Clear selection: resets every choice back to a clean map
+  function clearAll() {
+    map.closePopup();
+    if (selLayer) { map.removeLayer(selLayer); selLayer = null; }
+    // indicator off
+    state.ind = null; $$('.ind').forEach(x => x.classList.remove('on'));
+    // resolution back to cadastre, labels off
+    state.res = 'cad'; $$('[data-res]').forEach(x => x.classList.toggle('on', x.dataset.res === 'cad'));
+    state.labels = false; const lb = $('#labelsBtn'); lb.classList.remove('on'); lb.textContent = 'Show labels';
+    // conflict zones off, opacity reset
+    $('#zoneChk').checked = false; map.removeLayer(layers.zones);
+    state.zoneOp = 0.45; $('#zoneOp').value = 45; $('#zoneOpOut').textContent = '45%'; layers.zones.setStyle({ fillOpacity: 0.45 });
+    // damage filters: show all levels, sites on
+    state.dmgOn = new Set(DMG.map(d => d[0])); $$('.chip').forEach(c => c.classList.remove('off')); applySiteFilter();
+    $('#siteChk').checked = true; layers.sites.addTo(map);
+    // GeoAI off
+    $('#geoaiChk').checked = false; map.removeLayer(layers.geoai); map.removeLayer(layers.khiam);
+    // basemap matches theme, view back to South Lebanon
+    setBasemap(state.theme === 'dark' ? 'dark' : 'light');
+    drawChoropleth(); renderOverview(); refreshPanels(); showTab('welcome'); fitSouth();
+  }
+
   function bindUI() {
     $$('[data-res]').forEach(b => b.onclick = () => { state.res = b.dataset.res; $$('[data-res]').forEach(x => x.classList.toggle('on', x === b)); if (selLayer) { map.removeLayer(selLayer); selLayer = null; renderOverview(); } drawChoropleth(); refreshPanels(); });
     $('#labelsBtn').onclick = e => { state.labels = !state.labels; e.target.classList.toggle('on', state.labels); e.target.textContent = state.labels ? 'Hide labels' : 'Show labels'; drawChoropleth(); };
@@ -295,7 +317,7 @@
     $('#fitBtn').onclick = fitSouth;
     $('#selBtn').classList.add('on');
     $('#selBtn').onclick = e => { state.select = !state.select; e.target.classList.toggle('on', state.select); };
-    $('#clearBtn').onclick = () => { if (selLayer) map.removeLayer(selLayer); selLayer = null; renderOverview(); };
+    $('#clearBtn').onclick = clearAll;
     $$('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
     $('#themeBtn').onclick = () => {
       state.theme = state.theme === 'light' ? 'dark' : 'light';
